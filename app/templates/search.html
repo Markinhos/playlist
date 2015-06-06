@@ -1,0 +1,13 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Songs:</h2>
+{% if artists | length == 0 %}
+    <p>No artists found</p>
+{% else %}
+    <ul>
+    {% for artist in artists %}
+        <li>{{ artist.name }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}

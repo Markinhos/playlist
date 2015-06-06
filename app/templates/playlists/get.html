@@ -1,0 +1,14 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Playlist: {{ playlist.name }}</h2>
+<a href="/edit_playlist/{{ playlist.id }}">Edit</a>
+{% if playlist.songs | length == 0 %}
+    <p>No songs added yet</p>
+{% else %}
+    <ul>
+    {% for song in playlist.songs %}
+        <li>{{ song.name }}</li>
+    {% endfor %}
+    </ul>
+{% endif %}
+{% endblock %}
