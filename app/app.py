@@ -17,15 +17,6 @@ def index():
 def send_static(path):
     return send_from_directory('static', path)
 
-
-@app.route("/users/", methods=['GET', 'POST'])
-def users():
-    if request.method == 'POST':
-        data = request.get_json()
-        id = str(user_controller.insert_user(data['username'], data['password']))
-        return redirect(url_for('index'))
-
-
 @app.route("/playlists/", methods=['GET', 'POST'])
 def playlists():
     if request.method == 'POST':
