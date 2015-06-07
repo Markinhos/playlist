@@ -24,12 +24,12 @@ class Playlist(object):
     def add_song(self, song):
         result = mongo_connection.get_connection().Playlists.find_one_and_update(
             {'_id': ObjectId(self.id)},
-            {'$push':
-                {'songs' : {
+            {'$pushAll':
+                {'songs' : [{
                     'spotify_id': song['song_id'],
                     'name': song['song_name']
                     }
-                }
+                ]}
             })
         return result
 
@@ -54,7 +54,7 @@ class Playlist(object):
 
 
     @classmethod
-    def find(cls, id):
+    def get(cls, id):
         json = mongo_connection.get_connection().Playlists.find_one({'_id': ObjectId(id)})
         playlist = Playlist(json['name'])
         playlist.id = str(json['_id'])

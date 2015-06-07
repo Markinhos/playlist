@@ -1,20 +1,20 @@
 import urllib
 import json
+from app.models.playlist import Playlist
+from flask import render_template, request, redirect, url_for
 
 SPOTIFY_API_ENDPOINT='https://api.spotify.com/v1/'
 SEARCH_ENDPOINT=SPOTIFY_API_ENDPOINT+'search/'
 TRACKS_ENDPOINT=SPOTIFY_API_ENDPOINT+'tracks/'
 
-def search(query):
-    results = {}
-    tracks = urllib.urlopen("{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'track'}))).read()
-    results.update(json.loads(tracks))
-    albums = urllib.urlopen("{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'album'}))).read()
-    results.update(json.loads(albums))
-    artists = urllib.urlopen("{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'artist'}))).read()
-    results.update(json.loads(artists))
-    return results
+def search():
+    query = request.args.get('q')
+    playlist_id = request.args.get('playlist_id')
+    playlist = Playlist.get(playlist_id)
+    tracks = json.loads(urllib.urlopen("{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'track'}))).read())
+    return render_template('playlists/get.html', search=tracks['tracks']['items'], playlist=playlist)
 
 def get(spotify_id):
-    song = urllib.urlopen("{}{}".format(TRACKS_ENDPOINT,spotify_id)).read()
-    return json.loads(song)
+    song = json.loads(urllib.urlopen("{}{}".format(TRACKS_ENDPOINT,spotify_id)).read())
+    playlists = Playlist.list()
+    return render_template('songs/get.html', song=song, playlists=playlists)

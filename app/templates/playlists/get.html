@@ -5,6 +5,7 @@
 {% if playlist.songs | length == 0 %}
     <p>No songs added yet</p>
 {% else %}
+    <h3>Songs in the playlist</h3>
     <ul>
     {% for song in playlist.songs %}
         <li>
@@ -17,4 +18,26 @@
     {% endfor %}
     </ul>
 {% endif %}
+
+
+<form action="/search" method="GET">
+    <input value="{{ playlist.id }}" name="playlist_id" type="hidden">
+    <input name="q" type="text" placeholder="Look for a song">
+    <button type="submit">Search</button>
+</form>
+
+
+<ul>
+{% for track in search %}
+    <li>
+        <span>{{ track.name }} - {{ track.artists|map(attribute='name')|join(', ') }}</span>
+        <form action="/add_song" method="POST" id="{{ track.id }}">
+            <input value="{{ playlist.id }}" name="playlist_id" type="hidden">
+            <input value="{{ track.id }}" name="song_id" type="hidden">
+            <input value="{{ track.name }}" name="song_name" type="hidden">
+            <button type="submit">Add</button>
+        </form>
+    </li>
+{% endfor %}
+</ul>
 {% endblock %}
