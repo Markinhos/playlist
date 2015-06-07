@@ -1,22 +1,22 @@
-{% extends "layout.html" %}
+{% extends "../layout.html" %}
 {% block body %}
 <h2>Playlists</h2>
-{% if playlists | length == 0 %}
+{% if len(playlists) == 0 %}
     <p>No playlists added yet</p>
 {% else %}
     <ul>
     {% for playlist in playlists %}
         <li>
-            <a href="/playlists/{{ playlist.id }}">{{ playlist.name }}</a>
-            <form action="/delete_playlist/{{ playlist.id }}" method="POST">
+            <a href="/playlists/{{ playlist['id'] }}">{{ playlist['name'] }}</a>
+            <form action="/delete_playlist/{{ playlist['id'] }}" method="POST">
                 <button type"submit">Delete</form>
             </form>
         </li>
-    {% endfor %}
+    {% end %}
     </ul>
-{% endif %}
+{% end %}
 <form action="/playlists/" method="POST">
     <input name="name" id="playlist_name" type="text" placeholder="Add a new playlist">
     <button type="submit">Add</button>
 </form>
-{% endblock %}
+{% end %}

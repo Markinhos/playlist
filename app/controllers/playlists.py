@@ -1,43 +1,64 @@
 from flask import render_template, request, redirect, url_for
 from app.models.playlist import Playlist
 
-def list():
-    return render_template('playlists/list.html', playlists=Playlist.list())
+import tornado.web
 
-def create():
-    name = request.form.get('name')
-    playlist = Playlist(name)
-    playlist.save()
-    return redirect(url_for('playlists'))
+class PlaylistHandler(tornado.web.RequestHandler):
 
-def get(id):
-    playlist = Playlist.get(id).serialize()
-    return render_template('playlists/get.html', playlist=playlist)
+    @tornado.gen.coroutine
+    def get(self, id):
+        db = self.settings['db']
+        playlist = yield Playlist.get(db, id)
+        self.render('playlists/get.html', playlist=playlist.serialize(), search=[])
 
-def delete(id):
-    Playlist.delete(id)
-    return redirect(url_for('playlists'))
+    @tornado.gen.coroutine
+    def post(self, id):
+        db = self.settings['db']
+        playlist = yield Playlist.get(db, id)
+        playlist.name = self.get_argument('name')
+        yield playlist.save()
+        self.redirect('/playlists/{}'.format(id))
 
-def edit(id):
-    name = request.form.get('name')
-    playlist = Playlist.get(id)
-    playlist.name = name
-    playlist.save()
-    return redirect(url_for('playlist', id=id))
+class PlaylistsHandler(tornado.web.RequestHandler):
+    @tornado.gen.coroutine
+    def get(self):
+        db = self.settings['db']
+        results = yield Playlist.list(db)
+        self.render('playlists/list.html',playlists=results)
 
-def add_song():
-    playlist_id = request.form.get('playlist_id')
-    song_name = request.form.get('song_name')
-    song_id = request.form.get('song_id')
-    playlist = Playlist.get(playlist_id)
-    playlist.add_song({
-        'song_id': song_id,
-        'song_name': song_name
-    })
-    return redirect(url_for('playlist', id=playlist_id))
+    @tornado.gen.coroutine
+    def post(self):
+        db = self.settings['db']
+        name = self.get_argument('name')
+        playlist = Playlist(db, name)
+        yield playlist.save()
+        self.redirect('/playlists/')
 
-def delete_song(playlist_id):
-    song_id = request.form.get('song_id')
-    playlist = Playlist.get(playlist_id)
-    playlist.delete_song(song_id)
-    return redirect(url_for('playlist', id=playlist.id))
+class DeletePlaylistHandler(tornado.web.RequestHandler):
+    @tornado.gen.coroutine
+    def post(self, id):
+        db = self.settings['db']
+        yield Playlist.delete(db, id)
+        self.redirect('/playlists/')
+
+class AddSongHandler(tornado.web.RequestHandler):
+    @tornado.gen.coroutine
+    def post(self, id):
+        db = self.settings['db']
+        song_id = self.get_argument('song_id')
+        song_name = self.get_argument('song_name')
+        playlist = yield Playlist.get(db, id)
+        yield playlist.add_song({
+            'song_id': song_id,
+            'song_name': song_name
+        })
+        self.redirect('/playlists/{}'.format(id))
+
+class DeleteSongHandler(tornado.web.RequestHandler):
+    @tornado.gen.coroutine
+    def post(self, id):
+        db = self.settings['db']
+        song_id = self.get_argument('song_id')
+        playlist = yield Playlist.get(db, id)
+        yield playlist.delete_song(song_id)
+        self.redirect('/playlists/{}'.format(id))

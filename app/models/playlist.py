@@ -1,8 +1,9 @@
-from app.database.database import mongo_connection
 from bson.objectid import ObjectId
+from tornado.concurrent import TracebackFuture
 
 class Playlist(object):
-    def __init__(self, name):
+    def __init__(self, db, name):
+        self.db = db
         self.name = name
         self.songs = []
         self.id = None
@@ -13,28 +14,27 @@ class Playlist(object):
             'songs': self.songs
         }
         if self.id:
-            return mongo_connection.get_connection().Playlists.find_one_and_update(
+            return self.db.Playlists.update(
                     {'_id': ObjectId(self.id)},
                     {'$set':
                         {'name': self.name}
                     })
         else:
-            return mongo_connection.get_connection().Playlists.insert_one(playlist).inserted_id
+            return self.db.Playlists.insert(playlist)
 
     def add_song(self, song):
-        result = mongo_connection.get_connection().Playlists.find_one_and_update(
+        return self.db.Playlists.update(
             {'_id': ObjectId(self.id)},
-            {'$pushAll':
-                {'songs' : [{
+            {'$push':
+                {'songs' : {
                     'spotify_id': song['song_id'],
                     'name': song['song_name']
                     }
-                ]}
+                }
             })
-        return result
 
     def delete_song(self, song_id):
-        result = mongo_connection.get_connection().Playlists.find_one_and_update(
+        return self.db.Playlists.update(
             {'_id': ObjectId(self.id)},
             {'$pull':
                 {'songs' : {
@@ -42,7 +42,6 @@ class Playlist(object):
                     }
                 }
             })
-        return result
 
 
     def serialize(self):
@@ -54,29 +53,32 @@ class Playlist(object):
 
 
     @classmethod
-    def get(cls, id):
-        json = mongo_connection.get_connection().Playlists.find_one({'_id': ObjectId(id)})
-        playlist = Playlist(json['name'])
-        playlist.id = str(json['_id'])
-        playlist.songs = json['songs']
-        return playlist
+    def get(cls, db, id):
+        future = TracebackFuture()
+        def handle_response(response, error):
+            playlist = Playlist(db, response['name'])
+            playlist.id = response['_id']
+            playlist.songs = response['songs']
+            future.set_result(playlist)
+        db.Playlists.find_one({'_id': ObjectId(id)}, callback=handle_response)
+        return future
 
     @classmethod
-    def delete(cls, id):
-        return mongo_connection.get_connection().Playlists.delete_one({'_id': ObjectId(id)})
+    def delete(cls, db, id):
+        return db.Playlists.remove({'_id': ObjectId(id)})
 
     @classmethod
-    def get_all(cls):
-        cursor = mongo_connection.get_connection().Playlists.find()
-        for result in cursor:
-            yield result
-
-    @classmethod
-    def list(cls):
-        results = []
-        for result in Playlist.get_all():
-            result['id'] = str(result['_id'])
-            del result['_id']
-            print "Result {}".format(result)
-            results.append(result)
-        return results
+    def list(cls, db):
+        future = TracebackFuture()
+        def handle_response(response, error):
+            if error:
+                print "Error"
+            else:
+                results = []
+                for result in response:
+                    result['id'] = str(result['_id'])
+                    del result['_id']
+                    results.append(result)
+                future.set_result(results)
+        db.Playlists.find().to_list(None, callback=handle_response)
+        return future
