@@ -1,7 +1,10 @@
 {% extends "layout.html" %}
 {% block body %}
 <h2>Playlist: {{ playlist.name }}</h2>
-<a href="/edit_playlist/{{ playlist.id }}">Edit</a>
+<form action="/edit_playlist/{{ playlist.id}}" method="POST">
+    <input placeholder="rename playlist" name="name" type="text">
+    <button type="submit">Change</button>
+</form>
 {% if playlist.songs | length == 0 %}
     <p>No songs added yet</p>
 {% else %}
