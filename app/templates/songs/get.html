@@ -1,0 +1,19 @@
+{% extends "layout.html" %}
+{% block body %}
+<h2>Song: {{ song.name }}</h2>
+
+<div>
+    <span>Artist: </span>
+    <span>{{ song.artists|map(attribute='name')|join(', ') }}</span>
+</div>
+<select name="playlist" form="playlists">
+    {% for playlist in playlists %}
+        <option value="{{ playlist.id }}">{{ playlist.name }}</option>
+    {% endfor %}
+</select>
+<form action="/add_song" id="playlists" method="POST">
+    <input value="{{ song.id }}" name="song_id" type="hidden">
+    <input value="{{ song.name }}" name="song_name" type="hidden">
+    <button type="submit">Add song</button>
+<form>
+{% endblock %}

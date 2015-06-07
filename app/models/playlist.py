@@ -13,14 +13,37 @@ class Playlist(object):
             'songs': self.songs
         }
         if self.id:
-            return mongo_connection.get_connection().
-                Playlists.find_one_and_update(
+            return mongo_connection.get_connection().Playlists.find_one_and_update(
                     {'_id': ObjectId(self.id)},
                     {'$set':
                         {'name': self.name}
                     })
         else:
             return mongo_connection.get_connection().Playlists.insert_one(playlist).inserted_id
+
+    def add_song(self, song):
+        result = mongo_connection.get_connection().Playlists.find_one_and_update(
+            {'_id': ObjectId(self.id)},
+            {'$push':
+                {'songs' : {
+                    'spotify_id': song['song_id'],
+                    'name': song['song_name']
+                    }
+                }
+            })
+        return result
+
+    def delete_song(self, song_id):
+        result = mongo_connection.get_connection().Playlists.find_one_and_update(
+            {'_id': ObjectId(self.id)},
+            {'$pull':
+                {'songs' : {
+                    'spotify_id': song_id,
+                    }
+                }
+            })
+        return result
+
 
     def serialize(self):
         return {
@@ -35,6 +58,7 @@ class Playlist(object):
         json = mongo_connection.get_connection().Playlists.find_one({'_id': ObjectId(id)})
         playlist = Playlist(json['name'])
         playlist.id = str(json['_id'])
+        playlist.songs = json['songs']
         return playlist
 
     @classmethod
