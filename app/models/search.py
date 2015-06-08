@@ -14,7 +14,7 @@ CACHE = {}
 class Search(object):
 
     @classmethod
-    def get(self, query):
+    def get_tracks(self, query):
 
         future = TracebackFuture()
 

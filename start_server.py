@@ -11,7 +11,8 @@ client = MotorClient()
 db = client.test_db
 
 application = tornado.web.Application([
-    (r"/", playlists.PlaylistsHandler),
+    (r"/", tornado.web.RedirectHandler,
+        dict(url="/playlists/")),
     (r"/playlists/(.+)", playlists.PlaylistHandler),
     (r"/playlists/", playlists.PlaylistsHandler),
     (r"/delete_playlist/(.*)", playlists.DeletePlaylistHandler),

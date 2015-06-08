@@ -1,12 +1,16 @@
 from bson.objectid import ObjectId
 from tornado.concurrent import TracebackFuture
 
-class Playlist(object):
-    def __init__(self, db, name):
+from app.models import base_model
+
+class Playlist(base_model.BaseModel):
+    COLLECTION = 'Playlists'
+
+    def __init__(self, db, name, id=None, songs=None):
         self.db = db
         self.name = name
-        self.songs = []
-        self.id = None
+        self.songs = [] if songs is None else songs
+        self.id = id
 
     def save(self):
         playlist = {
@@ -43,7 +47,6 @@ class Playlist(object):
                 }
             })
 
-
     def serialize(self):
         return {
             'name': self.name,
@@ -51,34 +54,11 @@ class Playlist(object):
             'id': self.id
         }
 
-
     @classmethod
     def get(cls, db, id):
         future = TracebackFuture()
         def handle_response(response, error):
-            playlist = Playlist(db, response['name'])
-            playlist.id = response['_id']
-            playlist.songs = response['songs']
+            playlist = Playlist(db, response['name'], id=str(response['_id']), songs=response['songs'])
             future.set_result(playlist)
         db.Playlists.find_one({'_id': ObjectId(id)}, callback=handle_response)
-        return future
-
-    @classmethod
-    def delete(cls, db, id):
-        return db.Playlists.remove({'_id': ObjectId(id)})
-
-    @classmethod
-    def list(cls, db):
-        future = TracebackFuture()
-        def handle_response(response, error):
-            if error:
-                print "Error"
-            else:
-                results = []
-                for result in response:
-                    result['id'] = str(result['_id'])
-                    del result['_id']
-                    results.append(result)
-                future.set_result(results)
-        db.Playlists.find().to_list(None, callback=handle_response)
         return future
