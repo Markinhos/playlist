@@ -9,8 +9,10 @@ class SearchTracksHandler(tornado.web.RequestHandler):
 
     @tornado.gen.coroutine
     def get(self):
+        """Get tracks from the API"""
         db = self.settings['db']
         playlist_id = self.get_argument('playlist_id')
         query = self.get_argument('q')
+        # return tracks and playlist in parallel
         tracks, playlist = yield [Search.get_tracks(query), Playlist.get(db, playlist_id)]
         self.render('playlists/get.html', search=tracks, playlist=playlist.serialize())

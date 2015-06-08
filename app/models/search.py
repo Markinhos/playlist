@@ -15,7 +15,8 @@ class Search(object):
 
     @classmethod
     def get_tracks(self, query):
-
+        """Search tracks in the Spotify API the query gotten from the parameter.
+            Checks if it is in the cache before making the http call"""
         future = TracebackFuture()
 
         if query in CACHE:

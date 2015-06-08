@@ -3,8 +3,10 @@ from app.models.playlist import Playlist
 
 import tornado.web
 
-class PlaylistHandler(tornado.web.RequestHandler):
+"""Access model to get the information and setup the proper answer"""
 
+class PlaylistHandler(tornado.web.RequestHandler):
+    """Controller for a concrete playlists."""
     @tornado.gen.coroutine
     def get(self, id):
         db = self.settings['db']
@@ -20,6 +22,7 @@ class PlaylistHandler(tornado.web.RequestHandler):
         self.redirect('/playlists/{}'.format(id))
 
 class PlaylistsHandler(tornado.web.RequestHandler):
+    """Controller for playlists"""
     @tornado.gen.coroutine
     def get(self):
         db = self.settings['db']
@@ -35,6 +38,8 @@ class PlaylistsHandler(tornado.web.RequestHandler):
         self.redirect('/playlists/')
 
 class DeletePlaylistHandler(tornado.web.RequestHandler):
+    """Controller for a delete operation in the Playlists collection.
+        Used POST as is intented to use with html forms"""
     @tornado.gen.coroutine
     def post(self, id):
         db = self.settings['db']
@@ -42,11 +47,11 @@ class DeletePlaylistHandler(tornado.web.RequestHandler):
         self.redirect('/playlists/')
 
 class AddSongHandler(tornado.web.RequestHandler):
+    """Add song controller"""
     @tornado.gen.coroutine
     def post(self, id):
         db = self.settings['db']
-        song_id = self.get_argument('song_id')
-        song_name = self.get_argument('song_name')
+        song_id, song_name = self._get_songs_arguments()
         playlist = yield Playlist.get(db, id)
         yield playlist.add_song({
             'song_id': song_id,
@@ -54,7 +59,11 @@ class AddSongHandler(tornado.web.RequestHandler):
         })
         self.redirect('/playlists/{}'.format(id))
 
+    def _get_songs_arguments(self):
+        return self.get_argument('song_id'), self.get_argument('song_name')
+
 class DeleteSongHandler(tornado.web.RequestHandler):
+    """Delete song controller"""
     @tornado.gen.coroutine
     def post(self, id):
         db = self.settings['db']
