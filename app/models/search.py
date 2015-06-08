@@ -4,7 +4,7 @@ from tornado import gen, httpclient
 import tornado.web
 
 from tornado import gen
-from tornado.concurrent import TracebackFuture
+from tornado.concurrent import Future
 
 SPOTIFY_API_ENDPOINT='https://api.spotify.com/v1/'
 SEARCH_ENDPOINT=SPOTIFY_API_ENDPOINT+'search/'
@@ -16,8 +16,15 @@ class Search(object):
     @classmethod
     def get_tracks(self, query):
         """Search tracks in the Spotify API the query gotten from the parameter.
-            Checks if it is in the cache before making the http call"""
-        future = TracebackFuture()
+            Checks if it is in the cache before making the http call.
+
+            Args:
+                query (string): query term to be used in the API search
+
+            Returns:
+                Future. When resolved the future holds the tracks found.               
+        """
+        future = Future()
 
         if query in CACHE:
             tracks = CACHE[query]
