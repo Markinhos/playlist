@@ -17,7 +17,7 @@ class BaseModel(object):
         return db[cls.COLLECTION].remove({'_id': ObjectId(id)})
 
     @classmethod
-    def list(cls, db):
+    def list(cls, db, offset=0, limit=20):
         """Gets all the records from the db
             Args:
                 db: the database driver
@@ -33,12 +33,23 @@ class BaseModel(object):
             else:
                 results = []
                 for result in response:
+                    print "RESULT {}".format(result)
                     result['id'] = str(result['_id'])
                     del result['_id']
                     results.append(result)
                 future.set_result(results)
-        db[cls.COLLECTION].find().to_list(None, callback=handle_response)
+                
+        if offset == 0:
+            db[cls.COLLECTION].find()[:limit].to_list(None, callback=handle_response)
+        else:
+            db[cls.COLLECTION].find()[offset:(offset * limit)].to_list(None, callback=handle_response)
         return future
+
+    @classmethod
+    def count(cls, db):
+        """Gets the count of elements of this collection"""
+
+        return db[cls.COLLECTION].count()
 
 class Playlist(BaseModel):
     """Playlist model to perform CRUD actions and atomic adds/deletes over fields"""
@@ -127,7 +138,7 @@ class Playlist(BaseModel):
                 db: The database driver used.
                 id (str): The id of the playlist to be retrieved
         """
-        
+
         future = Future()
         # Handle the response of the playlists db access
         def handle_response(response, error):

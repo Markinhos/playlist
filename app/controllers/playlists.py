@@ -5,6 +5,8 @@ import tornado.web
 
 """Access model to get the information and setup the proper answer"""
 
+LIMIT_PAGINATION = 10
+
 class PlaylistHandler(tornado.web.RequestHandler):
     """Controller for a concrete playlists."""
     @tornado.gen.coroutine
@@ -26,8 +28,11 @@ class PlaylistsHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def get(self):
         db = self.settings['db']
-        results = yield Playlist.list(db)
-        self.render('playlists/list.html',playlists=results)
+        offset = self.get_argument('offset', default=0)
+        limit = self.get_argument('limit', default=LIMIT_PAGINATION)
+        results = yield Playlist.list(db, int(offset), int(limit))
+        count = yield Playlist.count(db)
+        self.render('playlists/list.html',playlists=results, count=count, limit=LIMIT_PAGINATION)
 
     @tornado.gen.coroutine
     def post(self):

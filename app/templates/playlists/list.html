@@ -14,6 +14,9 @@
         </li>
     {% end %}
     </ul>
+    {% for page in xrange(count/limit + 1) %}
+        <a href="/playlists/?offset={{ page * 2 }}">{{ page + 1 }}</a>
+    {% end %}
 {% end %}
 <form action="/playlists/" method="POST">
     <input name="name" id="playlist_name" type="text" placeholder="Add a new playlist">
