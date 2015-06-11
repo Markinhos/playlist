@@ -33,12 +33,11 @@ class BaseModel(object):
             else:
                 results = []
                 for result in response:
-                    print "RESULT {}".format(result)
                     result['id'] = str(result['_id'])
                     del result['_id']
                     results.append(result)
                 future.set_result(results)
-                
+
         if offset == 0:
             db[cls.COLLECTION].find()[:limit].to_list(None, callback=handle_response)
         else:

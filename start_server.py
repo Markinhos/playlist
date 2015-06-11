@@ -6,9 +6,7 @@ import os
 from motor import MotorClient
 
 from app.controllers import playlists, search
-
-client = MotorClient()
-db = client.test_db
+from app.database import database
 
 application = tornado.web.Application([
     (r"/", tornado.web.RedirectHandler,
@@ -22,8 +20,13 @@ application = tornado.web.Application([
 ],
     template_path=os.path.join(os.path.dirname(__file__), "app/templates"),
     debug=True,
-    db=db
 )
+
+def assign_database(_db):
+    application.settings['db'] = _db
+
+db = None
+database.get_connection(db, assign_database)
 
 if __name__ == "__main__":
     application.listen(5000)
