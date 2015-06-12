@@ -1,17 +1,19 @@
 import json
 import urllib
+
+from app.lib import cache
+
 from tornado import gen, httpclient
 import tornado.web
 from tornado.web import gen
-
-from tornado import gen
 from tornado.concurrent import Future
 
 SPOTIFY_API_ENDPOINT='https://api.spotify.com/v1/'
 SEARCH_ENDPOINT=SPOTIFY_API_ENDPOINT+'search/'
 TRACKS_ENDPOINT=SPOTIFY_API_ENDPOINT+'tracks/'
 
-CACHE = {}
+cache = cache.SimpleCache()
+
 class Search(object):
 
     @classmethod
@@ -27,12 +29,12 @@ class Search(object):
                 Future. When resolved the future holds the tracks found.
         """
 
-        if query in CACHE:
-            tracks = CACHE[query]
+        if cache.get(query):
+            tracks = cache.get(query)
         else:
             response = yield cls._fetch(query)
             tracks = cls._handle_search_response(response)
-            CACHE[query] = tracks
+            cache.set(query, tracks)
 
         raise gen.Return(tracks)
 

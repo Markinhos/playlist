@@ -1,4 +1,3 @@
-from flask import render_template, request, redirect, url_for
 from app.models.playlist import Playlist
 
 import tornado.web
@@ -96,7 +95,7 @@ class DeleteSongHandler(tornado.web.RequestHandler):
         song_id = self.get_argument('song_id')
         playlist = yield Playlist.get(db, id)
         try:
-            yield playlist.delete_song(song_id)    
+            yield playlist.delete_song(song_id)
         except Exception as error:
             print "Error {}".format(error)
             raise tornado.web.HTTPError(500, 'Oops, something is broken')
