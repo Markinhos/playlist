@@ -63,7 +63,7 @@ class Playlist(BaseModel):
 
     def __init__(self, db, name, id=None, songs=None):
         self.db = db
-        self.name = name
+        self.name = str(name)
         self.songs = [] if songs is None else songs
         self.id = id
 
@@ -75,8 +75,8 @@ class Playlist(BaseModel):
                 Future. Holds the id of the document inserted.
         """
         playlist = {
-            'name': self.name,
-            'songs': self.songs
+            'name': str(self.name),
+            'songs': list(self.songs)
         }
         if self.id:
             return self.db[Playlist.COLLECTION].update(
@@ -102,8 +102,8 @@ class Playlist(BaseModel):
             {'_id': ObjectId(self.id)},
             {'$push':
                 {'songs' : {
-                    'spotify_id': song['song_id'],
-                    'name': song['song_name']
+                    'spotify_id': str(song['song_id']),
+                    'name': str(song['song_name'])
                     }
                 }
             })
@@ -122,7 +122,7 @@ class Playlist(BaseModel):
             {'_id': ObjectId(self.id)},
             {'$pull':
                 {'songs' : {
-                    'spotify_id': song_id,
+                    'spotify_id': str(song_id),
                     }
                 }
             })
