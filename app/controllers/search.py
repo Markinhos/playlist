@@ -14,5 +14,10 @@ class SearchTracksHandler(tornado.web.RequestHandler):
         playlist_id = self.get_argument('playlist_id')
         query = self.get_argument('q')
         # return tracks and playlist in parallel
-        tracks, playlist = yield [Search.get_tracks(query), Playlist.get(db, playlist_id)]
+        try:
+            tracks, playlist = yield [Search.get_tracks(query), Playlist.get(db, playlist_id)]
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
+
         self.render('playlists/get.html', search=tracks, playlist=playlist.serialize())

@@ -13,6 +13,8 @@ class PlaylistHandler(tornado.web.RequestHandler):
     def get(self, id):
         db = self.settings['db']
         playlist = yield Playlist.get(db, id)
+        if playlist is None:
+            raise tornado.web.HTTPError(404, 'Playlist not found')
         self.render('playlists/get.html', playlist=playlist.serialize(), search=[])
 
     @tornado.gen.coroutine
@@ -29,8 +31,13 @@ class PlaylistsHandler(tornado.web.RequestHandler):
     def get(self):
         db = self.settings['db']
         offset = self.get_argument('offset', default=0)
-        limit = self.get_argument('limit', default=LIMIT_PAGINATION)        
-        results, count = yield [Playlist.list(db, int(offset), int(limit)), Playlist.count(db)]
+        limit = self.get_argument('limit', default=LIMIT_PAGINATION)
+        try:
+            results, count = yield [Playlist.list(db, int(offset), int(limit)), Playlist.count(db)]
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
+
         self.render('playlists/list.html',playlists=results, count=count, limit=LIMIT_PAGINATION)
 
     @tornado.gen.coroutine
@@ -38,7 +45,12 @@ class PlaylistsHandler(tornado.web.RequestHandler):
         db = self.settings['db']
         name = self.get_argument('name')
         playlist = Playlist(db, name)
-        yield playlist.save()
+        try:
+            yield playlist.save()
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
+
         self.redirect('/playlists/')
 
 class DeletePlaylistHandler(tornado.web.RequestHandler):
@@ -47,7 +59,12 @@ class DeletePlaylistHandler(tornado.web.RequestHandler):
     @tornado.gen.coroutine
     def post(self, id):
         db = self.settings['db']
-        yield Playlist.delete(db, id)
+        try:
+            yield Playlist.delete(db, id)
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
+
         self.redirect('/playlists/')
 
 class AddSongHandler(tornado.web.RequestHandler):
@@ -57,10 +74,15 @@ class AddSongHandler(tornado.web.RequestHandler):
         db = self.settings['db']
         song_id, song_name = self._get_songs_arguments()
         playlist = yield Playlist.get(db, id)
-        yield playlist.add_song({
-            'song_id': song_id,
-            'song_name': song_name
-        })
+        try:
+            yield playlist.add_song({
+                'song_id': song_id,
+                'song_name': song_name
+            })
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
+
         self.redirect('/playlists/{}'.format(id))
 
     def _get_songs_arguments(self):
@@ -73,5 +95,9 @@ class DeleteSongHandler(tornado.web.RequestHandler):
         db = self.settings['db']
         song_id = self.get_argument('song_id')
         playlist = yield Playlist.get(db, id)
-        yield playlist.delete_song(song_id)
+        try:
+            yield playlist.delete_song(song_id)    
+        except Exception as error:
+            print "Error {}".format(error)
+            raise tornado.web.HTTPError(500, 'Oops, something is broken')
         self.redirect('/playlists/{}'.format(id))

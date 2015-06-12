@@ -88,11 +88,6 @@ class Collection(object):
         future.set_result(True)
         return future
 
-
-
-
-
-
 class FakeDatabase(object):
 
     def __init__(self):
