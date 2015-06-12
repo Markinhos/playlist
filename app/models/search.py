@@ -2,6 +2,7 @@ import json
 import urllib
 from tornado import gen, httpclient
 import tornado.web
+from tornado.web import gen
 
 from tornado import gen
 from tornado.concurrent import Future
@@ -14,7 +15,8 @@ CACHE = {}
 class Search(object):
 
     @classmethod
-    def get_tracks(self, query):
+    @gen.coroutine
+    def get_tracks(cls, query):
         """Search tracks in the Spotify API the query gotten from the parameter.
             Checks if it is in the cache before making the http call.
 
@@ -22,22 +24,24 @@ class Search(object):
                 query (string): query term to be used in the API search
 
             Returns:
-                Future. When resolved the future holds the tracks found.               
+                Future. When resolved the future holds the tracks found.
         """
-        future = Future()
 
         if query in CACHE:
             tracks = CACHE[query]
-            future.set_result(tracks)
         else:
-            http_client = httpclient.AsyncHTTPClient()
-            tracks_url = "{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'track'}))
+            response = yield cls._fetch(query)
+            tracks = cls._handle_search_response(response)
+            CACHE[query] = tracks
 
-            def handle_response(response):
-                tracks = json.loads(response.body)['tracks']['items']
-                CACHE[query] = tracks
-                future.set_result(tracks)
+        raise gen.Return(tracks)
 
-            http_client.fetch(tracks_url, callback=handle_response)
+    @classmethod
+    def _handle_search_response(cls, response):
+        return json.loads(response.body)['tracks']['items']
 
-        return future
+    @classmethod
+    def _fetch(cls, query):
+        http_client = httpclient.AsyncHTTPClient()
+        tracks_url = "{}?{}".format(SEARCH_ENDPOINT, urllib.urlencode({'q': query, 'type': 'track'}))
+        return http_client.fetch(tracks_url)

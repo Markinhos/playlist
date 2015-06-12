@@ -16,9 +16,11 @@ class ToList(object):
         self.slice = value
         return self
 
-    def to_list(self, aux, **kwargs):
+    def to_list(self, aux):
+        future = Future()
         result = self.database[self.name][self.slice.start:self.slice.stop]
-        kwargs['callback'](copy.deepcopy(result), None)
+        future.set_result(copy.deepcopy(result))
+        return future
 
 class Collection(object):
 
@@ -53,11 +55,16 @@ class Collection(object):
         future.set_result(True)
         return future
 
-    def find_one(self, query, callback=None):
+    def find_one(self, query):
+        future = Future()
         value_query = query.values()[0]
         key_query = query.keys()[0]
         element = [ele for ele in self.database[self.name] if ele.get(key_query) == value_query]
-        callback(element[0], None)
+        if element == []:
+            future.set_result(None)
+        else:
+            future.set_result(element[0])
+        return future
 
     def update(self, query, modifier):
         future = Future()

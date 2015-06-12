@@ -29,9 +29,8 @@ class PlaylistsHandler(tornado.web.RequestHandler):
     def get(self):
         db = self.settings['db']
         offset = self.get_argument('offset', default=0)
-        limit = self.get_argument('limit', default=LIMIT_PAGINATION)
-        results = yield Playlist.list(db, int(offset), int(limit))
-        count = yield Playlist.count(db)
+        limit = self.get_argument('limit', default=LIMIT_PAGINATION)        
+        results, count = yield [Playlist.list(db, int(offset), int(limit)), Playlist.count(db)]
         self.render('playlists/list.html',playlists=results, count=count, limit=LIMIT_PAGINATION)
 
     @tornado.gen.coroutine

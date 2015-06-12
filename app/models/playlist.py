@@ -1,5 +1,6 @@
 from bson.objectid import ObjectId
 from tornado.concurrent import Future
+from tornado.web import gen
 
 class BaseModel(object):
     """Base Model class for manipulating records in the db"""
@@ -17,6 +18,7 @@ class BaseModel(object):
         return db[cls.COLLECTION].remove({'_id': ObjectId(id)})
 
     @classmethod
+    @gen.coroutine
     def list(cls, db, offset=0, limit=20):
         """Gets all the records from the db
             Args:
@@ -25,24 +27,29 @@ class BaseModel(object):
             Returns:
                 Future. Holds a list of dicts with the values
         """
-        future = Future()
-        # Handles the response from the db. Replaces _id:ObjectId for id:str
-        def handle_response(response, error):
-            if error:
-                print "Error! {}".format(error)
-            else:
-                results = []
-                for result in response:
-                    result['id'] = str(result['_id'])
-                    del result['_id']
-                    results.append(result)
-                future.set_result(results)
+        results = yield cls._list(db, offset=0, limit=20)
+        r = cls._handle_list_response(results, None)
+        raise gen.Return(r)
 
-        if offset == 0:
-            db[cls.COLLECTION].find()[:limit].to_list(None, callback=handle_response)
+    @classmethod
+    def _handle_list_response(cls, response, error):
+        # Handles the response from the db. Replaces _id:ObjectId for id:str
+        results = []
+        if error:
+            print "Error! {}".format(error)
         else:
-            db[cls.COLLECTION].find()[offset:(offset * limit)].to_list(None, callback=handle_response)
-        return future
+            for result in response:
+                result['id'] = str(result['_id'])
+                del result['_id']
+                results.append(result)
+        return response
+
+    @classmethod
+    def _list(cls, db, offset=0, limit=20):
+        if offset == 0:
+            return db[cls.COLLECTION].find()[:limit].to_list(None)
+        else:
+            return db[cls.COLLECTION].find()[offset:(offset * limit)].to_list(None)
 
     @classmethod
     def count(cls, db):
@@ -72,13 +79,13 @@ class Playlist(BaseModel):
             'songs': self.songs
         }
         if self.id:
-            return self.db.Playlists.update(
+            return self.db[Playlist.COLLECTION].update(
                     {'_id': ObjectId(self.id)},
                     {'$set':
                         {'name': self.name}
                     })
         else:
-            return self.db.Playlists.insert(playlist)
+            return self.db[Playlist.COLLECTION].insert(playlist)
 
     def add_song(self, song):
         """Add a song into the collections of songs.
@@ -91,7 +98,7 @@ class Playlist(BaseModel):
             Returns:
                 Future: Holds the id of the document updated
         """
-        return self.db.Playlists.update(
+        return self.db[Playlist.COLLECTION].update(
             {'_id': ObjectId(self.id)},
             {'$push':
                 {'songs' : {
@@ -111,7 +118,7 @@ class Playlist(BaseModel):
 
             Returns:
                 Future. Holds the id of the deleted song."""
-        return self.db.Playlists.update(
+        return self.db[Playlist.COLLECTION].update(
             {'_id': ObjectId(self.id)},
             {'$pull':
                 {'songs' : {
@@ -130,6 +137,7 @@ class Playlist(BaseModel):
         }
 
     @classmethod
+    @gen.coroutine
     def get(cls, db, id):
         """Get a record from the db and returns an object
 
@@ -138,10 +146,17 @@ class Playlist(BaseModel):
                 id (str): The id of the playlist to be retrieved
         """
 
-        future = Future()
+        playlist = yield cls._find_one(db, id)
+        result = cls._handle_get_response(db, playlist)
+        raise gen.Return(result)
+
+    @classmethod
+    def _handle_get_response(cls, db, response):
         # Handle the response of the playlists db access
-        def handle_response(response, error):
-            playlist = Playlist(db, response['name'], id=str(response['_id']), songs=response['songs'])
-            future.set_result(playlist)
-        db.Playlists.find_one({'_id': ObjectId(id)}, callback=handle_response)
-        return future
+        if response is None:
+            return None
+        return Playlist(db, response['name'], id=str(response['_id']), songs=response['songs'])
+
+    @classmethod
+    def _find_one(cls, db, id):
+        return db[Playlist.COLLECTION].find_one({'_id': ObjectId(id)})
