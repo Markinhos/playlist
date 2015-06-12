@@ -136,7 +136,7 @@ class MyTestCase(AsyncTestCase):
 
     @patch('app.models.playlist.Playlist._find_one')
     @tornado.testing.gen_test
-    def test_list(self, _get_mock_pass):
+    def test_get(self, _get_mock_pass):
         future = Future()
         future.set_result(
             {
@@ -150,6 +150,6 @@ class MyTestCase(AsyncTestCase):
         response = yield playlist.Playlist.get("Fake db", "556f146fcf01fd499c7affc1")
         playlist.Playlist._find_one.assert_called_once_with("Fake db", "556f146fcf01fd499c7affc1")
         assert type(response) == playlist.Playlist
-        
+
 if __name__ == '__main__':
     unittest.main()
