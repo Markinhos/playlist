@@ -39,3 +39,7 @@ Additionally there is another folder:
     - unit: All the unit tests.
         - playlist_model: Tests for the playlist model. All the dependencies are mocked.
         - search_model: Tests for the search model with mocked dependencies.
+
+ ##Installation
+
+ In order to install, I would recommend to use virtualenv. Once created a virtualenv directory and activated it can be used `pip install requirements.txt` in order to install the python libraries. If wanted to be tested with mongodb it has to be downloaded and started in localhost:27017 (default port). In order to run the test just run the python files.
